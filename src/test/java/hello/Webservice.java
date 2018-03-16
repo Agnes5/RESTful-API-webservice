@@ -1,7 +1,12 @@
 package hello;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +29,9 @@ public class Webservice {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private NoteRepository noteRepository;
 
 //    @MockBean
 //    NoteController noteController;
@@ -58,29 +66,37 @@ public class Webservice {
 
     @Test
     public void deleteNote() throws Exception {
+        Note note = new Note();
+        note.setTitle("Hello");
+        note.setContent("Content text");
+        note.setId((long) 200);
+        when(noteRepository.findById(note.getId())).thenReturn(java.util.Optional.of(note));
+        doNothing().when(noteRepository).delete(note);
+        mockMvc.perform(delete("/api/notes/{id}", note.getId())).andExpect(status().isOk());
 
-        RequestBuilder requestBuilder = MockMvcRequestBuilders
-                .delete("/api/notes/3");
+        verify(noteRepository, times(1)).findById(note.getId());
+        verify(noteRepository, times(1)).delete(note);
+        verifyNoMoreInteractions(noteRepository);
 
-        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
-
-        MockHttpServletResponse response = result.getResponse();
-
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
     }
 
     @Test
     public void updateNote() throws Exception {
-
-        RequestBuilder requestBuilder = MockMvcRequestBuilders
-                .post("/api/notes/1")
-                .accept(MediaType.APPLICATION_JSON).content("{\"title\":\"Hello\",\"content\":\"hello\"}")
-                .contentType(MediaType.APPLICATION_JSON);
-
-        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
-
-        MockHttpServletResponse response = result.getResponse();
-
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
+        
+        Note note = new Note();
+        note.setTitle("Hello");
+        note.setContent("Content text");
+        note.setId((long) 100);
+        when(noteRepository.findById(note.getId())).thenReturn(java.util.Optional.of(note));
+        doReturn(null).when(noteRepository).save(note);
+        mockMvc.perform(put("/api/notes/{id}", note.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(note)))
+                .andExpect(status().isOk());
+        verify(noteRepository, times(1)).findById(note.getId());
+        verify(noteRepository, times(1)).save(note);
+        verifyNoMoreInteractions(noteRepository);
     }
+
+
 }
