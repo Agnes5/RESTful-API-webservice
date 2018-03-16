@@ -33,9 +33,7 @@ public class Webservice {
     @MockBean
     private NoteRepository noteRepository;
 
-//    @MockBean
-//    NoteController noteController;
-
+    
     @Test
     public void createNote() throws Exception {
 
@@ -82,7 +80,7 @@ public class Webservice {
 
     @Test
     public void updateNote() throws Exception {
-        
+
         Note note = new Note();
         note.setTitle("Hello");
         note.setContent("Content text");
